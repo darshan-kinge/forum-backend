@@ -40,6 +40,7 @@ formRouter.route('/admin/update/:id').put(
     formController.updateForm
 );
 formRouter.route('/admin/delete/:id').delete(authMiddleware, adminMiddleware, formController.deleteForm);
+formRouter.route('/admin/duplicate/:id').post(authMiddleware, adminMiddleware, formController.duplicateForm);
 formRouter.route('/admin/responses/:formId').get(authMiddleware, adminMiddleware, formController.getFormResponses);
 formRouter.route('/admin/response/:responseId').get(authMiddleware, adminMiddleware, formController.getFormResponse);
 formRouter.route('/admin/response/:responseId/status').put(authMiddleware, adminMiddleware, formController.updateResponseStatus);

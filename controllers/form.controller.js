@@ -697,6 +697,61 @@ const uploadHeaderImage = async (req, res) => {
     }
 };
 
+// Duplicate form (admin only)
+const duplicateForm = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const original = await Form.findById(id).lean();
+        if (!original) {
+            return res.status(404).json({ success: false, message: 'Form not found' });
+        }
+
+        // Strip Mongo fields
+        const { _id, __v, createdAt, updatedAt, currentSubmissions, ...rest } = original;
+
+        // Generate a unique custom route
+        let baseRoute = `${rest.customRoute}-copy`;
+        let candidateRoute = baseRoute;
+        let counter = 1;
+        while (await Form.findOne({ customRoute: candidateRoute })) {
+            candidateRoute = `${baseRoute}-${counter++}`;
+        }
+
+        const duplicate = new Form({
+            ...rest,
+            title: `${rest.title} (Copy)`,
+            customRoute: candidateRoute,
+            isActive: false,       // start inactive so admin can review before publishing
+            currentSubmissions: 0
+        });
+
+        // Strip _id from sub-document arrays (Mongoose assigns new ones automatically)
+        if (Array.isArray(duplicate.customQuestions)) {
+            duplicate.customQuestions = duplicate.customQuestions.map(q => {
+                const { _id, ...q2 } = q;
+                return q2;
+            });
+        }
+        if (Array.isArray(duplicate.respondentFields)) {
+            duplicate.respondentFields = duplicate.respondentFields.map(f => {
+                const { _id, ...f2 } = f;
+                return f2;
+            });
+        }
+
+        await duplicate.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Form duplicated successfully',
+            data: duplicate
+        });
+    } catch (error) {
+        console.error('Error duplicating form:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
 export default {
     getFormByRoute,
     submitFormResponse,
@@ -709,5 +764,6 @@ export default {
     getFormResponse,
     updateResponseStatus,
     getFormStats,
-    uploadHeaderImage
+    uploadHeaderImage,
+    duplicateForm
 };
