@@ -47,7 +47,7 @@ userSchema.methods.generateToken = async function() {
             userId: this._id.toString(),
             email: this.email,
             isAdmin: this.isAdmin,
-        }, process.env.JWT_SECRET || 'darshan88', 
+        }, process.env.JWT_SECRET, 
         {
             expiresIn: '30d' 
         });

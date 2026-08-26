@@ -4,7 +4,7 @@ dotenv.config();
 const config = {
     port: process.env.PORT,
 
-    jwtSecret: process.env.JWT_SECRET || 'darshan88',
+    jwtSecret: process.env.JWT_SECRET,
 
     mongoURI: process.env.MONGO_URI,
 
@@ -20,7 +20,7 @@ const config = {
 
     resendApiKey: process.env.RESEND_API_KEY,
 
-    adminEmail: process.env.ADMIN_EMAIL || 'admin@example.com',
-    adminPassword: process.env.ADMIN_PASSWORD || 'admin123'
+    adminEmail: process.env.ADMIN_EMAIL,
+    adminPassword: process.env.ADMIN_PASSWORD
 };
 export default config;
