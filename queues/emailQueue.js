@@ -138,4 +138,6 @@ const emailQueueService = new EmailQueueService();
 // Export function to add emails to queue
 export const addEmailToQueue = async (emailData) => {
     return await emailQueueService.addToQueue(emailData);
-}; 
+};
+
+export { emailQueueService }; 

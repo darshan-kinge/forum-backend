@@ -18,10 +18,14 @@ const connectDB = async () => {
       return true;
     }
 
-    // Set connection options to handle timeouts
+    // Set connection options to handle timeouts and reconnections
     const options = {
-      serverSelectionTimeoutMS: 10000, // Keep trying to send operations for 10 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      serverSelectionTimeoutMS: 10000, // Give up selecting a server after 10s
+      socketTimeoutMS: 45000,          // Close sockets after 45s of inactivity
+      heartbeatFrequencyMS: 10000,     // Check server health every 10s
+      maxPoolSize: 10,                 // Keep up to 10 connections open
+      minPoolSize: 2,                  // Keep at least 2 connections open
+      connectTimeoutMS: 10000,         // Connection attempt timeout
     };
 
     const connection = await mongoose.connect(uri, options);
