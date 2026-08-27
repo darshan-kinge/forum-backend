@@ -34,14 +34,14 @@ const userSchema = new mongoose.Schema({
 
 userSchema.methods.comparePassword = async function(password) {
     try {
-        const isMatch = bcrypt.compare(password, this.password);
+        const isMatch = await bcrypt.compare(password, this.password);
         return isMatch;
     } catch (error) {
         console.error(error);
     }
 }
 
-userSchema.methods.generateToken = async function() {
+userSchema.methods.generateToken = function() {
     try {
         const token = jwt.sign({
             userId: this._id.toString(),
