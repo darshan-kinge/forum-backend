@@ -41,6 +41,10 @@ const recruitmentSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         },
+        allowMultiple: {
+            type: Boolean,
+            default: false
+        },
         placeholder: String,
         validation: {
             minLength: Number,
