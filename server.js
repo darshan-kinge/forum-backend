@@ -85,30 +85,8 @@ const shutdown = async (signal) => {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-// ─── Keep-alive ping (prevents Render free-tier cold starts) ─────────────────
-// Render spins down free services after 15min of inactivity → 30s cold start.
-// Pinging every 14min keeps it warm so login is always instant.
-const startKeepAlive = () => {
-	const backendUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
-	const pingUrl = `${backendUrl}/api/v1/health`;
-	setInterval(async () => {
-		try {
-			const { default: https } = await import('https');
-			const { default: http } = await import('http');
-			const mod = pingUrl.startsWith('https') ? https : http;
-			mod.get(pingUrl, (res) => {
-				console.log(`[KeepAlive] Pinged → ${res.statusCode}`);
-			}).on('error', (e) => {
-				console.warn('[KeepAlive] Ping failed:', e.message);
-			});
-		} catch (e) {
-			console.warn('[KeepAlive] Error:', e.message);
-		}
-	}, 14 * 60 * 1000); // every 14 minutes
-};
-
 // Only start if not running in a serverless environment
 if (!process.env.VERCEL) {
-	startServer().then(() => startKeepAlive());
+	startServer();
 }
 
