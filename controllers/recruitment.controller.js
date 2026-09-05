@@ -359,6 +359,80 @@ const updateApplicationStatus = async (req, res) => {
     }
 };
 
+// Export applications as CSV (admin only)
+const exportApplicationsCSV = async (req, res) => {
+    try {
+        const { recruitmentId } = req.params;
+
+        // Fetch the recruitment to get question labels
+        const recruitment = await Recruitment.findById(recruitmentId).select('title customQuestions');
+        if (!recruitment) {
+            return res.status(404).json({ success: false, message: 'Recruitment not found' });
+        }
+
+        // Fetch ALL applications (no pagination for export)
+        const applications = await RecruitmentApplication.find({ recruitmentId })
+            .sort({ submittedAt: -1 });
+
+        // Helper: escape a value for CSV (wrap in quotes, escape inner quotes)
+        const csvCell = (val) => {
+            if (val === null || val === undefined) return '';
+            const str = Array.isArray(val) ? val.join('; ') : String(val);
+            // Wrap in quotes and escape any existing quotes
+            return `"${str.replace(/"/g, '""')}"`;
+        };
+
+        // Fixed info columns
+        const infoHeaders = ['#', 'Submitted At', 'Status', 'Name', 'Email', 'Phone', 'PRN', 'Gender', 'Year', 'Course', 'Admin Notes'];
+
+        // Dynamic question columns from the recruitment definition
+        const questionHeaders = recruitment.customQuestions.map((q, i) => `Q${i + 1}: ${q.question}`);
+
+        const allHeaders = [...infoHeaders, ...questionHeaders];
+
+        // Build CSV rows
+        const rows = applications.map((app, idx) => {
+            const info = app.applicantInfo || {};
+
+            // Build a lookup from questionIndex → answer for this application
+            const answerMap = {};
+            (app.answers || []).forEach(a => {
+                answerMap[a.questionIndex] = a.answer;
+            });
+
+            const infoValues = [
+                idx + 1,
+                app.submittedAt ? new Date(app.submittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+                app.status || '',
+                info.name || `${info.first_name || ''} ${info.last_name || ''}`.trim(),
+                info.email || '',
+                info.phone || '',
+                info.prn || '',
+                info.gender || '',
+                info.year || '',
+                info.course || '',
+                app.adminNotes || ''
+            ];
+
+            const questionValues = recruitment.customQuestions.map((_, i) => answerMap[i] ?? '');
+
+            return [...infoValues, ...questionValues].map(csvCell).join(',');
+        });
+
+        const csvContent = [allHeaders.map(csvCell).join(','), ...rows].join('\r\n');
+
+        const filename = `${recruitment.title.replace(/[^a-z0-9]/gi, '_')}_applications_${new Date().toISOString().slice(0, 10)}.csv`;
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        // BOM for Excel to correctly detect UTF-8
+        res.send('\uFEFF' + csvContent);
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
 export default {
     getActiveRecruitment,
     submitApplication,
@@ -367,5 +441,6 @@ export default {
     updateRecruitment,
     deleteRecruitment,
     getApplications,
-    updateApplicationStatus
+    updateApplicationStatus,
+    exportApplicationsCSV
 };

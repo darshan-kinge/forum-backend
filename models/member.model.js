@@ -24,6 +24,10 @@ const memberSchema = new mongoose.Schema({
         required: true, 
         // unqiue: true
     },
+    phone: {
+        type: String,
+        trim: true
+    },
     course: {
         type: String,
         required: true,
