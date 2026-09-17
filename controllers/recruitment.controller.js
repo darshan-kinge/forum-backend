@@ -107,20 +107,20 @@ const submitApplication = async (req, res) => {
             $inc: { currentApplications: 1 }
         });
 
-        // Queue a confirmation email to the applicant (optional WhatsApp link)
+        // Queue a confirmation email — fire and forget so it never blocks the response
         const whatsappLine = recruitment.whatsappGroupUrl ? `<p><a href="${recruitment.whatsappGroupUrl}">Join our WhatsApp group</a></p>` : '';
-        await addRecruitmentEmailToQueue({
+        addRecruitmentEmailToQueue({
             email: normalizedApplicantInfo.email,
-            name: normalizedApplicantInfo.name || `${formData?.applicantInfo?.first_name || ''} ${formData?.applicantInfo?.last_name || ''}`.trim(),
+            name: normalizedApplicantInfo.name,
             subject: `Application Received: ${recruitment.title}`,
             html: `
                 <p>Dear ${normalizedApplicantInfo.name || 'Applicant'},</p>
                 <p>Thank you for applying to <strong>${recruitment.title}</strong>. We have received your recruitment application.</p>
                 <br/>
                 <b> <p> Join the Recruitment WhatsApp group for updates: ${whatsappLine}</p></b>
-                <p>We will get back to you soon.<br/>MIT-WPU Science & Spirituality Forum</p>
+                <p>We will get back to you soon.<br/>MIT-WPU Science &amp; Spirituality Forum</p>
             `
-        });
+        }).catch(err => console.error('Email queue error (non-fatal):', err));
 
         res.status(201).json({
             success: true,
@@ -129,6 +129,7 @@ const submitApplication = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Error submitting application:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
